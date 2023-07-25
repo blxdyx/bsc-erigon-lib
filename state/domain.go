@@ -1227,7 +1227,7 @@ func buildIndex(ctx context.Context, d *compress.Decompressor, idxPath, tmpdir s
 				}
 			}
 			// Skip value
-			keyPos = g.Skip()
+			keyPos, _ = g.Skip()
 
 			p.Processed.Add(1)
 		}
