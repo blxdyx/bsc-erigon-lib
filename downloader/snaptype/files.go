@@ -17,8 +17,10 @@
 package snaptype
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/anacrolix/torrent/metainfo"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -214,4 +216,13 @@ func ParseDir(dir string) (res []FileInfo, err error) {
 	})
 
 	return res, nil
+}
+
+func Hex2InfoHash(in string) (infoHash metainfo.Hash) {
+	inHex, err := hex.DecodeString(in)
+	if err != nil {
+		panic(err)
+	}
+	copy(infoHash[:], inHex)
+	return infoHash
 }
