@@ -34,10 +34,6 @@ func NewEthBackendClientDirect(server remote.ETHBACKENDServer) *EthBackendClient
 	return &EthBackendClientDirect{server: server}
 }
 
-func (s *EthBackendClientDirect) EngineGetBlobsBundleV1(ctx context.Context, in *remote.EngineGetBlobsBundleRequest, opts ...grpc.CallOption) (*types.BlobsBundleV1, error) {
-	return s.server.EngineGetBlobsBundleV1(ctx, in)
-}
-
 func (s *EthBackendClientDirect) Etherbase(ctx context.Context, in *remote.EtherbaseRequest, opts ...grpc.CallOption) (*remote.EtherbaseReply, error) {
 	return s.server.Etherbase(ctx, in)
 }
@@ -48,26 +44,6 @@ func (s *EthBackendClientDirect) NetVersion(ctx context.Context, in *remote.NetV
 
 func (s *EthBackendClientDirect) NetPeerCount(ctx context.Context, in *remote.NetPeerCountRequest, opts ...grpc.CallOption) (*remote.NetPeerCountReply, error) {
 	return s.server.NetPeerCount(ctx, in)
-}
-
-func (s *EthBackendClientDirect) EngineNewPayload(ctx context.Context, in *types.ExecutionPayload, opts ...grpc.CallOption) (*remote.EnginePayloadStatus, error) {
-	return s.server.EngineNewPayload(ctx, in)
-}
-
-func (s *EthBackendClientDirect) EngineForkChoiceUpdated(ctx context.Context, in *remote.EngineForkChoiceUpdatedRequest, opts ...grpc.CallOption) (*remote.EngineForkChoiceUpdatedResponse, error) {
-	return s.server.EngineForkChoiceUpdated(ctx, in)
-}
-
-func (s *EthBackendClientDirect) EngineGetPayload(ctx context.Context, in *remote.EngineGetPayloadRequest, opts ...grpc.CallOption) (*remote.EngineGetPayloadResponse, error) {
-	return s.server.EngineGetPayload(ctx, in)
-}
-
-func (s *EthBackendClientDirect) EngineGetPayloadBodiesByHashV1(ctx context.Context, in *remote.EngineGetPayloadBodiesByHashV1Request, opts ...grpc.CallOption) (*remote.EngineGetPayloadBodiesV1Response, error) {
-	return s.server.EngineGetPayloadBodiesByHashV1(ctx, in)
-}
-
-func (s *EthBackendClientDirect) EngineGetPayloadBodiesByRangeV1(ctx context.Context, in *remote.EngineGetPayloadBodiesByRangeV1Request, opts ...grpc.CallOption) (*remote.EngineGetPayloadBodiesV1Response, error) {
-	return s.server.EngineGetPayloadBodiesByRangeV1(ctx, in)
 }
 
 func (s *EthBackendClientDirect) Version(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*types.VersionReply, error) {
@@ -231,6 +207,14 @@ func (s *EthBackendClientDirect) Peers(ctx context.Context, in *emptypb.Empty, o
 	return s.server.Peers(ctx, in)
 }
 
+func (s *EthBackendClientDirect) AddPeer(ctx context.Context, in *remote.AddPeerRequest, opts ...grpc.CallOption) (*remote.AddPeerReply, error) {
+	return s.server.AddPeer(ctx, in)
+}
+
 func (s *EthBackendClientDirect) PendingBlock(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*remote.PendingBlockReply, error) {
 	return s.server.PendingBlock(ctx, in)
+}
+
+func (s *EthBackendClientDirect) BorEvent(ctx context.Context, in *remote.BorEventRequest, opts ...grpc.CallOption) (*remote.BorEventReply, error) {
+	return s.server.BorEvent(ctx, in)
 }

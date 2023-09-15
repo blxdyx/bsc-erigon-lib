@@ -36,6 +36,8 @@ const (
 	Headers Type = iota
 	Bodies
 	Transactions
+	BorEvents
+	BorSpans
 	NumberOfTypes
 )
 
@@ -47,6 +49,10 @@ func (ft Type) String() string {
 		return "bodies"
 	case Transactions:
 		return "transactions"
+	case BorEvents:
+		return "borevents"
+	case BorSpans:
+		return "borspans"
 	default:
 		panic(fmt.Sprintf("unknown file type: %d", ft))
 	}
@@ -60,6 +66,10 @@ func ParseFileType(s string) (Type, bool) {
 		return Bodies, true
 	case "transactions":
 		return Transactions, true
+	case "borevents":
+		return BorEvents, true
+	case "borspans":
+		return BorSpans, true
 	default:
 		return NumberOfTypes, false
 	}

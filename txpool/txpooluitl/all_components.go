@@ -24,7 +24,6 @@ import (
 	"github.com/c2h5oh/datasize"
 	mdbx2 "github.com/erigontech/mdbx-go/mdbx"
 	"github.com/holiman/uint256"
-	"github.com/ledgerwatch/erigon-lib/txpool/txpoolcfg"
 	"github.com/ledgerwatch/log/v3"
 
 	"github.com/ledgerwatch/erigon-lib/chain"
@@ -33,6 +32,7 @@ import (
 	"github.com/ledgerwatch/erigon-lib/kv/kvcache"
 	"github.com/ledgerwatch/erigon-lib/kv/mdbx"
 	"github.com/ledgerwatch/erigon-lib/txpool"
+	"github.com/ledgerwatch/erigon-lib/txpool/txpoolcfg"
 	"github.com/ledgerwatch/erigon-lib/types"
 )
 
@@ -134,11 +134,12 @@ func AllComponents(ctx context.Context, cfg txpoolcfg.Config, cache kvcache.Cach
 	chainID, _ := uint256.FromBig(chainConfig.ChainID)
 
 	shanghaiTime := chainConfig.ShanghaiTime
-	if cfg.OverrideShanghaiTime != nil {
-		shanghaiTime = cfg.OverrideShanghaiTime
+	cancunTime := chainConfig.CancunTime
+	if cfg.OverrideCancunTime != nil {
+		cancunTime = cfg.OverrideCancunTime
 	}
 
-	txPool, err := txpool.New(newTxs, chainDB, cfg, cache, *chainID, shanghaiTime, logger)
+	txPool, err := txpool.New(newTxs, chainDB, cfg, cache, *chainID, shanghaiTime, cancunTime, logger)
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}

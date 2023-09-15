@@ -63,10 +63,9 @@ type Config struct {
 	MergeNetsplitBlock            *big.Int `json:"mergeNetsplitBlock,omitempty"`            // Virtual fork after The Merge to use as a network splitter; see FORK_NEXT_VALUE in EIP-3675
 
 	// Mainnet fork scheduling switched from block numbers to timestamps after The Merge
-	ShanghaiTime     *big.Int `json:"shanghaiTime,omitempty"`
-	CancunTime       *big.Int `json:"cancunTime,omitempty"`
-	ShardingForkTime *big.Int `json:"shardingForkTime,omitempty"`
-	PragueTime       *big.Int `json:"pragueTime,omitempty"`
+	ShanghaiTime *big.Int `json:"shanghaiTime,omitempty"`
+	CancunTime   *big.Int `json:"cancunTime,omitempty"`
+	PragueTime   *big.Int `json:"pragueTime,omitempty"`
 
 	// Parlia fork blocks
 	RamanujanBlock  *big.Int `json:"ramanujanBlock,omitempty" toml:",omitempty"`  // ramanujanBlock switch block (nil = no fork, 0 = already activated)
@@ -343,6 +342,10 @@ func (c *Config) IsPlato(num uint64) bool {
 func (c *Config) IsOnPlato(num *big.Int) bool {
 	return numEqual(c.PlatoBlock, num)
 }
+// IsCancun returns whether time is either equal to the Cancun fork time or greater.
+func (c *Config) IsCancun(time uint64) bool {
+	return isForked(c.CancunTime, time)
+}
 
 func (c *Config) IsHertz(num uint64) bool {
 	return isForked(c.HertzBlock, num)
@@ -603,6 +606,11 @@ type BorConfig struct {
 	CalcuttaBlock *big.Int `json:"calcuttaBlock"` // Calcutta switch block (nil = no fork, 0 = already on calcutta)
 	JaipurBlock   *big.Int `json:"jaipurBlock"`   // Jaipur switch block (nil = no fork, 0 = already on jaipur)
 	DelhiBlock    *big.Int `json:"delhiBlock"`    // Delhi switch block (nil = no fork, 0 = already on delhi)
+
+	IndoreBlock                *big.Int          `json:"indoreBlock"`                // Indore switch block (nil = no fork, 0 = already on indore)
+	StateSyncConfirmationDelay map[string]uint64 `json:"stateSyncConfirmationDelay"` // StateSync Confirmation Delay, in seconds, to calculate `to`
+
+	sprints sprints
 }
 
 // String implements the stringer interface, returning the consensus engine details.
@@ -611,11 +619,66 @@ func (b *BorConfig) String() string {
 }
 
 func (c *BorConfig) CalculateProducerDelay(number uint64) uint64 {
-	return c.sprintSize(c.ProducerDelay, number)
+	return borKeyValueConfigHelper(c.ProducerDelay, number)
 }
 
 func (c *BorConfig) CalculateSprint(number uint64) uint64 {
-	return c.sprintSize(c.Sprint, number)
+	if c.sprints == nil {
+		c.sprints = asSprints(c.Sprint)
+	}
+
+	for i := 0; i < len(c.sprints)-1; i++ {
+		if number >= c.sprints[i].from && number < c.sprints[i+1].from {
+			return c.sprints[i].size
+		}
+	}
+
+	return c.sprints[len(c.sprints)-1].size
+}
+
+func (c *BorConfig) CalculateSprintCount(from, to uint64) int {
+	switch {
+	case from > to:
+		return 0
+	case from < to:
+		to--
+	}
+
+	if c.sprints == nil {
+		c.sprints = asSprints(c.Sprint)
+	}
+
+	count := uint64(0)
+	startCalc := from
+
+	zeroth := func(boundary uint64, size uint64) uint64 {
+		if boundary%size == 0 {
+			return 1
+		}
+
+		return 0
+	}
+
+	for i := 0; i < len(c.sprints)-1; i++ {
+		if startCalc >= c.sprints[i].from && startCalc < c.sprints[i+1].from {
+			if to >= c.sprints[i].from && to < c.sprints[i+1].from {
+				if startCalc == to {
+					return int(count + zeroth(startCalc, c.sprints[i].size))
+				}
+				return int(count + zeroth(startCalc, c.sprints[i].size) + (to-startCalc)/c.sprints[i].size)
+			} else {
+				endCalc := c.sprints[i+1].from - 1
+				count += zeroth(startCalc, c.sprints[i].size) + (endCalc-startCalc)/c.sprints[i].size
+				startCalc = endCalc + 1
+			}
+		}
+	}
+
+	if startCalc == to {
+		return int(count + zeroth(startCalc, c.sprints[len(c.sprints)-1].size))
+	}
+
+	return int(count + zeroth(startCalc, c.sprints[len(c.sprints)-1].size) + (to-startCalc)/c.sprints[len(c.sprints)-1].size)
 }
 
 func (c *BorConfig) CalculateBackupMultiplier(number uint64) uint64 {
@@ -642,6 +705,14 @@ func (c *BorConfig) IsOnCalcutta(number *big.Int) bool {
 	return numEqual(c.CalcuttaBlock, number)
 }
 
+func (c *BorConfig) IsIndore(number uint64) bool {
+	return isForked(c.IndoreBlock, number)
+}
+
+func (c *BorConfig) CalculateStateSyncDelay(number uint64) uint64 {
+	return borKeyValueConfigHelper(c.StateSyncConfirmationDelay, number)
+}
+
 func (c *BorConfig) calcConfig(field map[string]uint64, number uint64) uint64 {
 	keys := sortMapKeys(field)
 	for i := 0; i < len(keys)-1; i++ {
@@ -654,7 +725,7 @@ func (c *BorConfig) calcConfig(field map[string]uint64, number uint64) uint64 {
 	return field[keys[len(keys)-1]]
 }
 
-func (c *BorConfig) sprintSize(field map[string]uint64, number uint64) uint64 {
+func borKeyValueConfigHelper(field map[string]uint64, number uint64) uint64 {
 	keys := sortMapKeys(field)
 	for i := 0; i < len(keys)-1; i++ {
 		valUint, _ := strconv.ParseUint(keys[i], 10, 64)
@@ -688,6 +759,39 @@ func sortMapKeys(m map[string]uint64) []string {
 	sort.Strings(keys)
 
 	return keys
+}
+
+type sprint struct {
+	from, size uint64
+}
+
+type sprints []sprint
+
+func (s sprints) Len() int {
+	return len(s)
+}
+
+func (s sprints) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s sprints) Less(i, j int) bool {
+	return s[i].from < s[j].from
+}
+
+func asSprints(configSprints map[string]uint64) sprints {
+	sprints := make(sprints, len(configSprints))
+
+	i := 0
+	for key, value := range configSprints {
+		sprints[i].from, _ = strconv.ParseUint(key, 10, 64)
+		sprints[i].size = value
+		i++
+	}
+
+	sort.Sort(sprints)
+
+	return sprints
 }
 
 // Rules is syntactic sugar over Config. It can be used for functions

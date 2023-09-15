@@ -69,6 +69,7 @@ func (f *Send) notifyTests() {
 	}
 }
 
+// Broadcast given RLPs to random peers
 func (f *Send) BroadcastPooledTxs(rlps [][]byte) (txSentTo []int) {
 	defer f.notifyTests()
 	if len(rlps) == 0 {
@@ -78,6 +79,8 @@ func (f *Send) BroadcastPooledTxs(rlps [][]byte) (txSentTo []int) {
 	var prev, size int
 	for i, l := 0, len(rlps); i < len(rlps); i++ {
 		size += len(rlps[i])
+		// Wait till the combined size of rlps so far is greater than a threshold and
+		// send them all at once. Then wait till end of array or this threshold hits again
 		if i == l-1 || size >= p2pTxPacketLimit {
 			txsData := types2.EncodeTransactions(rlps[prev:i+1], nil)
 			var txs66 *sentry.SendMessageToRandomPeersRequest
@@ -120,7 +123,7 @@ func (f *Send) AnnouncePooledTxs(types []byte, sizes []uint32, hashes types2.Has
 	prevI := 0
 	prevJ := 0
 	for prevI < len(hashes) || prevJ < len(types) {
-		// Prepare two versions of the annoucement message, one for pre-eth/68 peers, another for post-eth/68 peers
+		// Prepare two versions of the announcement message, one for pre-eth/68 peers, another for post-eth/68 peers
 		i := prevI
 		for i < len(hashes) && rlp.HashesLen(hashes[prevI:i+32]) < p2pTxPacketLimit {
 			i += 32
@@ -137,7 +140,7 @@ func (f *Send) AnnouncePooledTxs(types []byte, sizes []uint32, hashes types2.Has
 			panic(fmt.Sprintf("Serialised hashes encoding len mismatch, expected %d, got %d", iSize, s))
 		}
 		if s := rlp.EncodeAnnouncements(types[prevJ:j], sizes[prevJ:j], hashes[32*prevJ:32*j], jData); s != jSize {
-			panic(fmt.Sprintf("Serialised annoucements encoding len mismatch, expected %d, got %d", jSize, s))
+			panic(fmt.Sprintf("Serialised announcements encoding len mismatch, expected %d, got %d", jSize, s))
 		}
 		for _, sentryClient := range f.sentryClients {
 			if !sentryClient.Ready() {

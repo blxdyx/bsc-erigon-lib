@@ -19,6 +19,7 @@ package kv
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/VictoriaMetrics/metrics"
 	"github.com/ledgerwatch/erigon-lib/kv/iter"
@@ -28,6 +29,8 @@ import (
 //Variables Naming:
 //  tx - Database Transaction
 //  txn - Ethereum Transaction (and TxNum - is also number of Etherum Transaction)
+//  blockNum - Ethereum block number - same across all nodes. blockID - auto-increment ID - which can be differrent across all nodes
+//  txNum/txID - same
 //  RoTx - Read-Only Database Transaction. RwTx - read-write
 //  k, v - key, value
 //  ts - TimeStamp. Usually it's Etherum's TransactionNumber (auto-increment ID). Or BlockNumber.
@@ -169,6 +172,24 @@ func (l Label) String() string {
 		return "inMem"
 	default:
 		return "unknown"
+	}
+}
+func UnmarshalLabel(s string) Label {
+	switch s {
+	case "chaindata":
+		return ChainDB
+	case "txpool":
+		return TxPoolDB
+	case "sentry":
+		return SentryDB
+	case "consensus":
+		return ConsensusDB
+	case "downloader":
+		return DownloaderDB
+	case "inMem":
+		return InMem
+	default:
+		panic(fmt.Sprintf("unexpected label: %s", s))
 	}
 }
 
@@ -448,6 +469,21 @@ type RwCursor interface {
 	DeleteCurrent() error
 }
 
+// CursorDupSort
+//
+// Example:
+//
+//	for k, v, err = cursor.First(); k != nil; k, v, err = cursor.NextNoDup() {
+//		if err != nil {
+//			return err
+//		}
+//		for ; v != nil; _, v, err = cursor.NextDup() {
+//			if err != nil {
+//				return err
+//			}
+//
+//		}
+//	}
 type CursorDupSort interface {
 	Cursor
 
