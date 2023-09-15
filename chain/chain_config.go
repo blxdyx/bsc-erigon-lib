@@ -342,10 +342,6 @@ func (c *Config) IsPlato(num uint64) bool {
 func (c *Config) IsOnPlato(num *big.Int) bool {
 	return numEqual(c.PlatoBlock, num)
 }
-// IsCancun returns whether time is either equal to the Cancun fork time or greater.
-func (c *Config) IsCancun(time uint64) bool {
-	return isForked(c.CancunTime, time)
-}
 
 func (c *Config) IsHertz(num uint64) bool {
 	return isForked(c.HertzBlock, num)
