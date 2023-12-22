@@ -65,6 +65,7 @@ type Config struct {
 	// Mainnet fork scheduling switched from block numbers to timestamps after The Merge
 	ShanghaiTime     *big.Int `json:"shanghaiTime,omitempty"`
 	KeplerTime       *big.Int `json:"keplerTime,omitempty"`
+	KeplerBlock      *big.Int `json:"keplerBlock,omitempty" toml:",omitempty"`
 	CancunTime       *big.Int `json:"cancunTime,omitempty"`
 	ShardingForkTime *big.Int `json:"shardingForkTime,omitempty"`
 	PragueTime       *big.Int `json:"pragueTime,omitempty"`
