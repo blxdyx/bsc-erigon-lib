@@ -234,7 +234,7 @@ func (c *Config) IsGrayGlacier(num uint64) bool {
 
 // IsShanghai returns whether time is either equal to the Shanghai fork time or greater.
 func (c *Config) IsShanghai(num uint64, time uint64) bool {
-	return c.IsLondon(num) && isForked(c.ShanghaiTime, time)
+	return c.IsLondon(num) && isForked(big.NewInt(0), time)
 }
 
 // IsCancun returns whether time is either equal to the Cancun fork time or greater.
@@ -368,7 +368,7 @@ func (c *Config) IsOnHertzfix(num uint64) bool {
 
 // IsKepler returns whether time is either equal to the IsKepler fork time or greater.
 func (c *Config) IsKepler(num uint64, time uint64) bool {
-	return c.IsLondon(num) && isForked(c.KeplerTime, time)
+	return c.IsLondon(num) && isForked(big.NewInt(0), time)
 }
 
 func (c *Config) IsOnKepler(currentBlockNumber *big.Int, lastBlockTime uint64, currentBlockTime uint64) bool {
@@ -376,7 +376,7 @@ func (c *Config) IsOnKepler(currentBlockNumber *big.Int, lastBlockTime uint64, c
 	if currentBlockNumber.Cmp(big.NewInt(1)) >= 0 {
 		lastBlockNumber.Sub(currentBlockNumber, big.NewInt(1))
 	}
-	return !c.IsKepler(lastBlockNumber.Uint64(), lastBlockTime) && c.IsKepler(currentBlockNumber.Uint64(), currentBlockTime)
+	return c.IsLondon(currentBlockNumber.Uint64()) && c.IsKepler(currentBlockNumber.Uint64(), currentBlockTime)
 }
 
 // IsFeynman returns whether time is either equal to the Feynman fork time or greater.
